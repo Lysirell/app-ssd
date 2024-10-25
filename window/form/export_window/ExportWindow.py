@@ -1,7 +1,9 @@
+import os
 from tkinter import filedialog, messagebox
-from window.form.FormIO import exportar  # Ensure this import matches your file structure
+from window.form.FormIO import *  # Ensure this import matches your file structure
 from window.GUI_Builders import *
 from pathlib import Path
+
 
 class ExportWindow:
     def __init__(self, parent_form):
@@ -34,8 +36,11 @@ class ExportWindow:
         self.path_display = tk.Label(self.root, background="#AAAAAA", font=("Calibri", 11), text=self.folder_path)
         self.path_display.place(x=20, y=30)
 
-        crear_boton(self.root, "Seleccionar Carpeta", lambda: self.select_folder(), 20, 60, 150)
-        crear_boton(self.root, "Exportar a .docx (Word)", lambda: self.export_to_docx(), 180, 60, 180)
+        self.status_label = tk.Label(self.root, text=f"Nombre del Archivo: {leer_datos(self.parent_form)["NOMBRE"]}.docx", font=("Calibri", 11))
+        self.status_label.place(x=20, y=60)
+
+        crear_boton(self.root, "Seleccionar Carpeta", lambda: self.select_folder(), 20, 90, 150)
+        crear_boton(self.root, "Exportar a .docx (Word)", lambda: self.export_to_docx(), 180, 90, 180)
 
 
     def select_folder(self):
@@ -46,8 +51,14 @@ class ExportWindow:
     def export_to_docx(self):
         # Assuming the export function takes the output path and the instance of ProductoFormulario
         output_folder = self.folder_path
+        filename = leer_datos(self.parent_form)["NOMBRE"] + ".docx"
         if output_folder:
-            exportar(self.parent_form, self.folder_path)  # Call your export function with the current form instance
-            messagebox.showinfo("Success", "Document exported successfully!")
-        else:
-            messagebox.showwarning("Warning", "Please select an output folder.")
+            print(filename, os.listdir(output_folder))
+            if filename in os.listdir(output_folder):
+                confirm_messagebox(self.root,
+                                   "Advertencia de sobreescritura",
+                                   "Se ha encontrado un archivo con el mismo nombre en la carpeta de salida. ¿Está seguro que desea sobreescribir el archivo? Esta acción es permanente.",
+                                   confirm=lambda: exportar(self.parent_form, self.folder_path))
+            else:
+                exportar(self.parent_form, self.folder_path)  # Call your export function with the current form instance
+                topmost_messagebox("Archivo exportado", "El documento se exportó correctamente en la carpeta seleccionada.")

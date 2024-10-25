@@ -1,5 +1,8 @@
 import tkinter as tk
+from tkinter import messagebox
+from PIL import Image, ImageTk
 from tkcalendar import DateEntry  # Ensure you have tkcalendar installed
+
 
 # Limit the number of characters in a Text widget
 def limitar_caracteres(text, limite):
@@ -9,6 +12,7 @@ def limitar_caracteres(text, limite):
         text.insert("1.0", current_text[:limite])
         return "break"
 
+
 # Limit the number of characters in an Entry widget
 def limitar_caracteres_entry(entry, limite):
     current_text = entry.get()
@@ -17,15 +21,17 @@ def limitar_caracteres_entry(entry, limite):
         entry.insert(0, current_text[:limite])
         return "break"
 
+
 # Create an Entry widget with a character limit
 def crear_entry(parent, x_origin, y_origin, label_text, var, char_limit, lx, ly, width, ex, ey):
     tk.Label(parent, text=label_text).place(x=lx + x_origin, y=ly + y_origin)
     entry = tk.Entry(parent, textvariable=var, width=width)
     entry.place(x=ex + x_origin, y=ey + y_origin)
     entry.bind("<KeyPress>", lambda event: limitar_caracteres_entry(entry, char_limit)
-               if event.keysym not in ('BackSpace', 'Delete') else None)
+    if event.keysym not in ('BackSpace', 'Delete') else None)
     entry.bind("<KeyRelease>", lambda event: limitar_caracteres_entry(entry, char_limit)
-               if event.keysym not in ('BackSpace', 'Delete') else None)
+    if event.keysym not in ('BackSpace', 'Delete') else None)
+
 
 # Create a DateEntry widget
 def crear_date_entry(parent, x_origin, y_origin, label_text, lx, ly, dx, dy):
@@ -34,10 +40,12 @@ def crear_date_entry(parent, x_origin, y_origin, label_text, lx, ly, dx, dy):
     var.place(x=dx + x_origin, y=dy + y_origin)
     return var
 
+
 # Create a button widget
 def crear_boton(parent, text, command, x, y, width):
     button = tk.Button(parent, text=text, command=command)
     button.place(x=x, y=y, width=width)
+
 
 # Create a checklist with multiple checkboxes
 def crear_checklist(parent, x_origin, y_origin, label, descriptions, var_array, lx, ly, cy_start):
@@ -66,3 +74,90 @@ def crear_text_section(parent, x_origin, y_origin, label, char_limit, lx, ly, tx
 
     # Return the text widget for later access
     return text_widget
+
+def crear_boton_imagen(parent, x_origin, y_origin, image_path, array, toggle_value, x, y, width, height):
+    """
+    Creates a toggle image button in the specified parent widget, starting in the 'off' state.
+
+    Args:
+        parent: The parent widget (e.g., a Tk or Frame).
+        x_origin: The x-origin for placing the button.
+        y_origin: The y-origin for placing the button.
+        image_path: The path to the image file for the button.
+        command: The function to be called when the button is clicked.
+        x: The x-coordinate for placing the button.
+        y: The y-coordinate for placing the button.
+        width: The width of the button.
+        height: The height of the button.
+    """
+    # Load the original image
+    original_image = Image.open(image_path)
+    resized_image = original_image.resize((width, height), Image.BILINEAR)
+
+    # Convert the resized image to a Tkinter PhotoImage
+    # Create a transparent version of the image (50% opacity)
+    transparent_image = resized_image.convert("RGBA")
+    alpha = transparent_image.split()[3]  # Get the alpha channel
+    transparent_image.putalpha(alpha.point(lambda p: p * 0.2))  # Set 50% transparency
+    transparent_image_tk = ImageTk.PhotoImage(transparent_image)
+
+    # Create a normal image for the button
+    normal_image_tk = ImageTk.PhotoImage(resized_image)
+
+    # Create a variable to track the toggle state
+    is_toggled = [False]  # Use a mutable type to allow changes inside the command
+
+    def toggle_pic(ar: list, toggle):
+        if toggle in ar:
+            ar.remove(toggle)
+        elif toggle not in ar:
+            ar.append(toggle)
+        print(ar)
+
+    def toggle_button():
+        is_toggled[0] = not is_toggled[0]  # Toggle the state
+        # Set button image based on the toggle state
+        button.config(image=transparent_image_tk if not is_toggled[0] else normal_image_tk)
+        button.image = transparent_image_tk if not is_toggled[0] else normal_image_tk
+        toggle_pic(array, toggle_value)
+
+    # Create the button with the transparent image initially (for the 'off' state)
+    button = tk.Button(parent, image=transparent_image_tk, command=toggle_button)
+    button.image = transparent_image_tk  # Keep a reference to the transparent image to prevent garbage collection
+    button.place(x=x_origin + x, y=y_origin + y, width=width, height=height)
+
+def topmost_messagebox(title, message):
+    # Create a hidden window to act as the parent (to keep the messagebox on top)
+    top = tk.Toplevel()
+    top.withdraw()  # Hide the Toplevel window
+    top.attributes('-topmost', True)  # Set it as topmost
+    messagebox.showinfo(title, message, parent=top)
+    top.destroy()
+
+
+def confirm_messagebox(root, title, message, confirm=None, cancel=None):
+    # Function to create a topmost confirmation box
+    def on_confirm():
+        top.destroy()
+        confirm()
+
+        topmost_messagebox("Archivo sobreescrito", "El archivo se sobreescribió correctamente.")
+
+    def on_cancel():
+        top.destroy()
+        cancel()
+    # Create a top-level window for the messagebox
+    top = tk.Toplevel(root)
+    top.title(title)
+    top.geometry("500x150")
+    top.attributes("-topmost", True)  # Make it topmost
+
+    # Message Label
+    tk.Label(top,text=message, wraplength=400, font=("Calibri", 10)).pack(pady=20)
+
+    # Buttons for Confirm and Cancel
+    button_frame = tk.Frame(top)
+    button_frame.pack(pady=10)
+
+    tk.Button(button_frame, text="Sobreescribir", command=on_confirm, width=10).pack(side="left", padx=10)
+    tk.Button(button_frame, text="Cancelar", command=on_cancel, width=10).pack(side="right", padx=10)

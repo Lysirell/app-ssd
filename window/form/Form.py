@@ -1,4 +1,4 @@
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 import tkcalendar
 
@@ -48,13 +48,10 @@ class ProductoFormulario:
             "9 - Dañino p/ medio ambiente"
         ]
         self.epp_descripciones = [
-            "Guantes de Seguridad", "Mascara respiratoria", "Gafas de Seguridad"
+            "1 - Guantes de Seguridad", "2 - Mascara respiratoria", "3 - Gafas de Seguridad"
         ]
-        self.sga_vars = [tk.IntVar(self.root) for _ in self.sga_descripciones]
-        self.epp_vars = [tk.IntVar(self.root) for _ in self.epp_descripciones]
-
-        self.lista_sga = [tk.IntVar(self.root) for _ in self.sga_descripciones]
-        self.lista_epp = [tk.IntVar(self.root) for _ in self.epp_descripciones]
+        self.lista_sga = []
+        self.lista_epp = []
 
     """
     Parameters for helper functions:
@@ -105,8 +102,14 @@ class ProductoFormulario:
 
 
     def open_export_window(self):
-        print("Opening export window...")
-        export_window = ExportWindow(self)
+        filename = FormIO.leer_datos(self)["NOMBRE"]
+        if filename == "" or filename[0] == " ":
+            print("ERROR: No filename selected.")
+            messagebox.showwarning("Error",
+                                   "El nombre del producto está vacío o es un nombre inválido.")
+        else:
+            print("Opening export window...")
+            export_window = ExportWindow(self)
 
     def crear_secciones(self):
         """Creates all sections of the form (Pictograms, EPP, Text fields)."""
@@ -114,12 +117,12 @@ class ProductoFormulario:
         separator = ttk.Separator(self.root, orient='horizontal')
         separator.pack(fill='x', pady=95)
 
-        # Checklists
+        """
         crear_checklist(self.root, 700, 110, "Pictogramas SGA (Código Numérico)", self.sga_descripciones, self.lista_sga, 0,
                               0,  50)
         crear_checklist(self.root, 700, 320, "EPP Obligatorios",
                               self.epp_descripciones, self.lista_epp, 0, 0, 20)
-
+        """
         # Secciones de texto
         self.text_riesgos = crear_text_section(self.root, 10, 100, "Riesgos del Producto", 600, 0, 0, 20, 20, 0, 210)
         self.text_manipulacion = crear_text_section(self.root, 350, 100, "Consignas de Manipulación Segura", 600, 0, 0, 20,
@@ -142,3 +145,37 @@ class ProductoFormulario:
         self.text_fuego = crear_text_section(self.root, 350, 765, "En caso de Fuego", 600, 0, 0,
                                                    20,
                                                    20, 0, 210)
+
+        # Pictogramas SGA
+
+
+
+        sga_buttons_origin = [700, 120]
+
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/1.png", self.lista_sga, "assets/sga/1.png", 0,
+                           0, 100, 140)
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/2.png", self.lista_sga, "assets/sga/2.png", 105,
+                           0, 100, 140)
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/3.png", self.lista_sga, "assets/sga/3.png", 210,
+                           0, 100, 140)
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/4.png", self.lista_sga, "assets/sga/4.png", 0,
+                           145, 100, 140)
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/5.png", self.lista_sga, "assets/sga/5.png", 105,
+                           145, 100, 140)
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/6.png", self.lista_sga, "assets/sga/6.png", 210,
+                           145, 100, 140)
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/7.png", self.lista_sga, "assets/sga/7.png", 0,
+                           290, 100, 140)
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/8.png", self.lista_sga, "assets/sga/8.png", 105,
+                           290, 100, 140)
+        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/9.png", self.lista_sga, "assets/sga/9.png", 210,
+                           290, 100, 140)
+
+        epp_buttons_origin = [700, 600]
+
+        crear_boton_imagen(self.root, epp_buttons_origin[0], epp_buttons_origin[1], "assets/epp/1.png", self.lista_epp, "assets/epp/1.png", 0,
+                           0, 100, 140)
+        crear_boton_imagen(self.root, epp_buttons_origin[0], epp_buttons_origin[1], "assets/epp/2.png", self.lista_epp, "assets/epp/2.png", 105,
+                           0, 100, 140)
+        crear_boton_imagen(self.root, epp_buttons_origin[0], epp_buttons_origin[1], "assets/epp/3.png", self.lista_epp, "assets/epp/3.png", 210,
+                           0, 100, 140)

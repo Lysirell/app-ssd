@@ -1,10 +1,30 @@
+import re
+from plistlib import InvalidFileException
 from tkinter import messagebox
-
+import json
+import unicodedata
 from docx import Document
 from docx2pdf import convert
 
+from window.GUI_Builders import topmost_messagebox
 from window.form.export_window import SheetWriter
 
+
+def slugify(value, allow_unicode=False):
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value.lower())
+    return re.sub(r'[-\s]+', '-', value).strip('-_')
 
 def leer_datos(form):
 
@@ -21,10 +41,8 @@ def leer_datos(form):
         "RESPONSABLE": f"REVISADO POR: {form.responsable.get()}",
         "NOMBRE": form.nombre_producto.get(),
         "ESTADO": form.forma.get(),
-        "SGA": [f"assets/sga/{form.sga_descripciones[i][0:1]}.png" for i in range(len(form.sga_descripciones))
-                if form.lista_sga[i].get() == 1],
-        "EPP": [f"assets/epp/{form.epp_descripciones[i][0:1]}.png" for i in range(len(form.epp_descripciones))
-                if form.lista_sga[i].get() == 1],
+        "SGA": form.lista_sga,
+        "EPP": form.lista_epp,
         "RIESGOS": form.text_riesgos.get("1.0", "end"),
         "MANIPULACION": form.text_manipulacion.get("1.0", "end"),
         "ALMACENAMIENTO": form.text_almacenamiento.get("1.0", "end"),
@@ -38,6 +56,11 @@ def leer_datos(form):
 
     return datos
 
+def to_json(datos):
+    filename = slugify(datos["NOMBRE"])
+    print(filename)
+    with open(f"raw-{filename}.json", "w") as json_file:
+        json.dump(datos, json_file, indent=4)
 
 def exportar(form, output_path):
     """
@@ -52,8 +75,9 @@ def exportar(form, output_path):
     SheetWriter.fill_form(doc, datos)
 
     # Define the output paths
-    word_file_path = f"{output_path}/{datos['NOMBRE']}.docx"
-    pdf_file_path = f"{output_path}/{datos['NOMBRE']}.pdf"
+    filename = slugify(datos["NOMBRE"])
+    word_file_path = f"{output_path}/{filename}.docx"
+    pdf_file_path = f"{output_path}/{filename}.pdf"
 
     # Save the Word document
     doc.save(word_file_path)
@@ -68,11 +92,8 @@ def cargar_datos(form):
     print("CARGANDO")
 
 def guardar_datos(form):
-
-    datos = leer_datos(form)
-    for key in datos:
-            print(key, ':', datos[key])
+    to_json(leer_datos(form))
 
 
     # Muestra los datos guardados
-    messagebox.showinfo("Guardado", f"Se guardaron los datos ingresados.")
+    topmost_messagebox("Datos Exportados", "Se exportaron los datos correctamente.")

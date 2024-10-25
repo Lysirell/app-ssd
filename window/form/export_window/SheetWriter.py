@@ -138,3 +138,4 @@ def fill_form(doc, datos):
     replace(doc, "{fuego}", datos["FUEGO"], size="Small", alignment="left", vertical_alignment="top")
 
     place_pictograms(doc, "{sga}", datos["SGA"], width_cm=1.8)
+    place_pictograms(doc, "{epp}", datos["EPP"], width_cm=1.8)
