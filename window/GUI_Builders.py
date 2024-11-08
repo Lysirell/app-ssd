@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
+from xmlrpc.client import Boolean
+
 from PIL import Image, ImageTk
 from tkcalendar import DateEntry  # Ensure you have tkcalendar installed
 
@@ -58,7 +60,7 @@ def crear_checklist(parent, x_origin, y_origin, label, descriptions, var_array, 
 def crear_text_section(parent, x_origin, y_origin, label, char_limit, lx, ly, tx, ty, sx, sh, width=50, height=15):
     tk.Label(parent, text=label).place(x=lx + x_origin, y=ly + y_origin)
 
-    text_widget = tk.Text(parent, width=width, height=height, font=("Calibri", 9))
+    text_widget = tk.Text(parent, width=width, height=height, font=("Calibri", 9), wrap="word")
     text_widget.bind("<KeyPress>", lambda event: limitar_caracteres(text_widget, char_limit)
     if event.keysym not in ('BackSpace', 'Delete') else None)
     text_widget.bind("<KeyRelease>", lambda event: limitar_caracteres(text_widget, char_limit)
@@ -75,56 +77,7 @@ def crear_text_section(parent, x_origin, y_origin, label, char_limit, lx, ly, tx
     # Return the text widget for later access
     return text_widget
 
-def crear_boton_imagen(parent, x_origin, y_origin, image_path, array, toggle_value, x, y, width, height):
-    """
-    Creates a toggle image button in the specified parent widget, starting in the 'off' state.
-
-    Args:
-        parent: The parent widget (e.g., a Tk or Frame).
-        x_origin: The x-origin for placing the button.
-        y_origin: The y-origin for placing the button.
-        image_path: The path to the image file for the button.
-        command: The function to be called when the button is clicked.
-        x: The x-coordinate for placing the button.
-        y: The y-coordinate for placing the button.
-        width: The width of the button.
-        height: The height of the button.
-    """
-    # Load the original image
-    original_image = Image.open(image_path)
-    resized_image = original_image.resize((width, height), Image.BILINEAR)
-
-    # Convert the resized image to a Tkinter PhotoImage
-    # Create a transparent version of the image (50% opacity)
-    transparent_image = resized_image.convert("RGBA")
-    alpha = transparent_image.split()[3]  # Get the alpha channel
-    transparent_image.putalpha(alpha.point(lambda p: p * 0.2))  # Set 50% transparency
-    transparent_image_tk = ImageTk.PhotoImage(transparent_image)
-
-    # Create a normal image for the button
-    normal_image_tk = ImageTk.PhotoImage(resized_image)
-
-    # Create a variable to track the toggle state
-    is_toggled = [False]  # Use a mutable type to allow changes inside the command
-
-    def toggle_pic(ar: list, toggle):
-        if toggle in ar:
-            ar.remove(toggle)
-        elif toggle not in ar:
-            ar.append(toggle)
-        print(ar)
-
-    def toggle_button():
-        is_toggled[0] = not is_toggled[0]  # Toggle the state
-        # Set button image based on the toggle state
-        button.config(image=transparent_image_tk if not is_toggled[0] else normal_image_tk)
-        button.image = transparent_image_tk if not is_toggled[0] else normal_image_tk
-        toggle_pic(array, toggle_value)
-
-    # Create the button with the transparent image initially (for the 'off' state)
-    button = tk.Button(parent, image=transparent_image_tk, command=toggle_button)
-    button.image = transparent_image_tk  # Keep a reference to the transparent image to prevent garbage collection
-    button.place(x=x_origin + x, y=y_origin + y, width=width, height=height)
+#window/GUI_Builders.py
 
 def topmost_messagebox(title, message):
     # Create a hidden window to act as the parent (to keep the messagebox on top)
@@ -141,11 +94,15 @@ def confirm_messagebox(root, title, message, confirm=None, cancel=None):
         top.destroy()
         confirm()
 
-        topmost_messagebox("Archivo sobreescrito", "El archivo se sobreescribió correctamente.")
+        topmost_messagebox(
+            "Archivo exportado",
+            "El documento se exportó correctamente en la carpeta seleccionada."
+        )
 
     def on_cancel():
         top.destroy()
         cancel()
+
     # Create a top-level window for the messagebox
     top = tk.Toplevel(root)
     top.title(title)
@@ -153,7 +110,7 @@ def confirm_messagebox(root, title, message, confirm=None, cancel=None):
     top.attributes("-topmost", True)  # Make it topmost
 
     # Message Label
-    tk.Label(top,text=message, wraplength=400, font=("Calibri", 10)).pack(pady=20)
+    tk.Label(top, text=message, wraplength=400, font=("Calibri", 10)).pack(pady=20)
 
     # Buttons for Confirm and Cancel
     button_frame = tk.Frame(top)
@@ -161,3 +118,65 @@ def confirm_messagebox(root, title, message, confirm=None, cancel=None):
 
     tk.Button(button_frame, text="Sobreescribir", command=on_confirm, width=10).pack(side="left", padx=10)
     tk.Button(button_frame, text="Cancelar", command=on_cancel, width=10).pack(side="right", padx=10)
+
+class ToggleImageButton:
+    def __init__(self, parent, x_origin, y_origin, image_path, array, toggle_target, x, y, width, height, id):
+        """Initializes a toggle image button in the specified parent widget."""
+        self.parent = parent
+        self.array = array
+        self.target_image_path = toggle_target
+        self.is_toggled = False  # Track the button's toggle state
+        self.id = id
+        # Load and resize the original image
+        original_image = Image.open(image_path)
+        resized_image = original_image.resize((width, height), Image.BILINEAR)
+
+        # Create a normal and transparent version of the image
+        self.normal_image_tk = ImageTk.PhotoImage(resized_image)
+
+        transparent_image = resized_image.convert("RGBA")
+        alpha = transparent_image.split()[3]  # Get the alpha channel
+        transparent_image.putalpha(alpha.point(lambda p: p * 0.2))  # Set 50% transparency
+        self.transparent_image_tk = ImageTk.PhotoImage(transparent_image)
+
+        # Create the button with the transparent image initially (off state)
+        self.button = tk.Button(
+            self.parent,
+            image=self.transparent_image_tk,
+            command=self.toggle_button
+        )
+        self.button.image = self.transparent_image_tk  # Prevent garbage collection
+        self.button.place(x=x_origin + x, y=y_origin + y, width=width, height=height)
+
+    def toggle_pic(self, force=None):
+        if force is None:
+            """Add or remove the img path from the array of images that will be exported."""
+            if self.target_image_path in self.array:
+                self.array.remove(self.target_image_path)
+            else:
+                self.array.append(self.target_image_path)
+
+            print(self.array)
+
+        if force is not None:
+            if force and self.target_image_path not in self.array:
+                self.array.append(self.target_image_path)
+            elif not force and self.target_image_path in self.array:
+                self.array.remove(self.target_image_path)
+
+    def toggle_button(self, force=None):
+        """Toggle the button state and update its image."""
+        if force is None:
+            self.is_toggled = not self.is_toggled  # Toggle the state
+
+        if force is not None:
+            if force:
+                self.is_toggled = True
+
+            elif not force:
+                self.is_toggled = False
+
+        new_image = self.normal_image_tk if self.is_toggled else self.transparent_image_tk
+        self.button.config(image=new_image)
+        self.button.image = new_image  # Prevent garbage collection
+        self.toggle_pic(force=force)

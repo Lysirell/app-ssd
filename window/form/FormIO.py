@@ -10,21 +10,7 @@ from window.GUI_Builders import topmost_messagebox
 from window.form.export_window import SheetWriter
 
 
-def slugify(value, allow_unicode=False):
-    """
-    Taken from https://github.com/django/django/blob/master/django/utils/text.py
-    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
-    dashes to single dashes. Remove characters that aren't alphanumerics,
-    underscores, or hyphens. Convert to lowercase. Also strip leading and
-    trailing whitespace, dashes, and underscores.
-    """
-    value = str(value)
-    if allow_unicode:
-        value = unicodedata.normalize('NFKC', value)
-    else:
-        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
-    value = re.sub(r'[^\w\s-]', '', value.lower())
-    return re.sub(r'[-\s]+', '-', value).strip('-_')
+
 
 def leer_datos(form):
 
@@ -56,11 +42,45 @@ def leer_datos(form):
 
     return datos
 
-def to_json(datos):
+def slugify(value, allow_unicode=False):
+    """
+    Taken from https://github.com/django/django/blob/master/django/utils/text.py
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+    dashes to single dashes. Remove characters that aren't alphanumerics,
+    underscores, or hyphens. Convert to lowercase. Also strip leading and
+    trailing whitespace, dashes, and underscores.
+    """
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value.lower())
+    return re.sub(r'[-\s]+', '-', value).strip('-_')
+
+def serialize(output_folder, datos):
     filename = slugify(datos["NOMBRE"])
-    print(filename)
-    with open(f"raw-{filename}.json", "w") as json_file:
+    with open(f"{output_folder}/{filename}-STD.json", "w") as json_file:
         json.dump(datos, json_file, indent=4)
+
+def deserialize(filename):
+    """
+    Deserialize a JSON file into a Python dictionary.
+    :param filename: The name of the JSON file (without 'raw-' prefix).
+    :return: A dictionary with the data from the JSON file.
+    """
+    try:
+        with open(f"{filename}", "r") as json_file:
+            data = json.load(json_file)
+            print(f"Loaded data from: {filename}.json")
+            return data
+    except FileNotFoundError:
+        print(f"Error: File '{filename}.json' not found.")
+    except json.JSONDecodeError as e:
+        print(f"Error decoding JSON: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+    return None
 
 def exportar(form, output_path):
     """
@@ -77,22 +97,17 @@ def exportar(form, output_path):
     # Define the output paths
     filename = slugify(datos["NOMBRE"])
     word_file_path = f"{output_path}/{filename}.docx"
-    pdf_file_path = f"{output_path}/{filename}.pdf"
+    #pdf_file_path = f"{output_path}/{filename}.pdf"
 
     # Save the Word document
     doc.save(word_file_path)
-
-    # Convert to PDF
     #convert(word_file_path, pdf_file_path)
 
-    print("Document saved as PDF and opened:", pdf_file_path)
+    print("Document saved:", word_file_path)
 
 
 def cargar_datos(form):
     print("CARGANDO")
-
-def guardar_datos(form):
-    to_json(leer_datos(form))
 
 
     # Muestra los datos guardados

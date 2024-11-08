@@ -1,11 +1,12 @@
+from pathlib import Path
 from tkinter import ttk, messagebox
 
 import tkcalendar
 
 from window.form import FormIO
+from window.form.FileBrowser import FileBrowser
 from window.form.export_window.ExportWindow import ExportWindow
 from window.GUI_Builders import *
-
 
 """
 Ventana principal de formulario de producto:
@@ -31,8 +32,10 @@ class ProductoFormulario:
         # Create UI components
         self.crear_header()
         self.crear_secciones()
-
+        self.browser = FileBrowser(self, x=1050, y=120, width=580, height=860)
     def init_variables(self):
+        self.docx_output_path = "No hay carpeta seleccionada."
+
         self.ficha = tk.IntVar(self.root)
         self.edicion = tk.IntVar(self.root)
         self.nombre_producto = tk.StringVar(self.root)
@@ -52,6 +55,12 @@ class ProductoFormulario:
         ]
         self.lista_sga = []
         self.lista_epp = []
+
+        self.buttons_sga = []
+        self.buttons_epp = []
+
+
+
 
     """
     Parameters for helper functions:
@@ -95,21 +104,7 @@ class ProductoFormulario:
         self.vigente = crear_date_entry(self.root, 595, 50, "Vigente:", 0, 0, 0, 20)
 
         # Botones principales
-        crear_boton(self.root, "Importar Datos", lambda: FormIO.cargar_datos(self), 1030, 20, 150)
-        crear_boton(self.root, "Guardar Datos", lambda: FormIO.guardar_datos(self), 1200, 20, 150)
-        crear_boton(self.root, "Exportar Formulario", self.open_export_window, 1200, 50, 150)
-
-
-
-    def open_export_window(self):
-        filename = FormIO.leer_datos(self)["NOMBRE"]
-        if filename == "" or filename[0] == " ":
-            print("ERROR: No filename selected.")
-            messagebox.showwarning("Error",
-                                   "El nombre del producto está vacío o es un nombre inválido.")
-        else:
-            print("Opening export window...")
-            export_window = ExportWindow(self)
+        crear_boton(self.root, "Abrir opciones de Exportación", lambda: ExportWindow(self) , 750, 45, 200)
 
     def crear_secciones(self):
         """Creates all sections of the form (Pictograms, EPP, Text fields)."""
@@ -117,65 +112,132 @@ class ProductoFormulario:
         separator = ttk.Separator(self.root, orient='horizontal')
         separator.pack(fill='x', pady=95)
 
-        """
-        crear_checklist(self.root, 700, 110, "Pictogramas SGA (Código Numérico)", self.sga_descripciones, self.lista_sga, 0,
-                              0,  50)
-        crear_checklist(self.root, 700, 320, "EPP Obligatorios",
-                              self.epp_descripciones, self.lista_epp, 0, 0, 20)
-        """
         # Secciones de texto
-        self.text_riesgos = crear_text_section(self.root, 10, 100, "Riesgos del Producto", 600, 0, 0, 20, 20, 0, 210)
-        self.text_manipulacion = crear_text_section(self.root, 350, 100, "Consignas de Manipulación Segura", 600, 0, 0, 20,
+        self.text_riesgos = crear_text_section(self.root, 10, 100, "Riesgos del Producto", 680, 0, 0, 20, 20, 0, 210)
+        self.text_manipulacion = crear_text_section(self.root, 350, 100, "Consignas de Manipulación Segura", 800, 0, 0, 20,
                                  20, 0, 210)
 
-        self.text_almacenamiento = crear_text_section(self.root, 10, 335, "Consignas de Almacenamiento Seguro", 600, 0, 0, 20,
+        self.text_almacenamiento = crear_text_section(self.root, 10, 335, "Consignas de Almacenamiento Seguro", 800, 0, 0, 20,
                                  20, 0, 210)
 
-        self.text_eliminacion = crear_text_section(self.root, 350, 335, "Consignas de Eliminación o Desecho", 600, 0, 0, 20,
+        self.text_eliminacion = crear_text_section(self.root, 350, 335, "Consignas de Eliminación o Desecho", 800, 0, 0, 20,
                                  20, 0, 210)
 
-        self.text_firstaid = crear_text_section(self.root, 10, 570, "Primeros Auxilios", 600, 0, 0,
+        self.text_firstaid = crear_text_section(self.root, 10, 570, "Primeros Auxilios", 900, 0, 0,
                                                    20,
                                                    20, 0, 150, width=107, height=12)
 
-        self.text_derrame = crear_text_section(self.root, 10, 765, "En caso de Derrame", 600, 0, 0,
+        self.text_derrame = crear_text_section(self.root, 10, 765, "En caso de Derrame", 800, 0, 0,
                                                    20,
                                                    20, 0, 210)
 
-        self.text_fuego = crear_text_section(self.root, 350, 765, "En caso de Fuego", 600, 0, 0,
+        self.text_fuego = crear_text_section(self.root, 350, 765, "En caso de Fuego", 800, 0, 0,
                                                    20,
                                                    20, 0, 210)
-
-        # Pictogramas SGA
-
-
 
         sga_buttons_origin = [700, 120]
+        button_width, button_height = 100, 140
+        x_offset, y_offset = 105, 145  # Distance between buttons
 
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/1.png", self.lista_sga, "assets/sga/1.png", 0,
-                           0, 100, 140)
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/2.png", self.lista_sga, "assets/sga/2.png", 105,
-                           0, 100, 140)
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/3.png", self.lista_sga, "assets/sga/3.png", 210,
-                           0, 100, 140)
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/4.png", self.lista_sga, "assets/sga/4.png", 0,
-                           145, 100, 140)
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/5.png", self.lista_sga, "assets/sga/5.png", 105,
-                           145, 100, 140)
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/6.png", self.lista_sga, "assets/sga/6.png", 210,
-                           145, 100, 140)
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/7.png", self.lista_sga, "assets/sga/7.png", 0,
-                           290, 100, 140)
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/8.png", self.lista_sga, "assets/sga/8.png", 105,
-                           290, 100, 140)
-        crear_boton_imagen(self.root, sga_buttons_origin[0], sga_buttons_origin[1], "assets/sga/9.png", self.lista_sga, "assets/sga/9.png", 210,
-                           290, 100, 140)
+        for i in range(9):
+            row = i // 3  # Determine the row (0, 1, or 2)
+            col = i % 3  # Determine the column (0, 1, or 2)
+
+            x = col * x_offset  # Calculate x position
+            y = row * y_offset  # Calculate y position
+            img_path = f"assets/sga/{i + 1}.png"  # Generate image path dynamically
+
+            # Create and store the button
+            button = ToggleImageButton(
+                self.root,
+                sga_buttons_origin[0],
+                sga_buttons_origin[1],
+                img_path,
+                self.lista_sga,
+                img_path,
+                x, y,
+                button_width,
+                button_height,
+                i + 1
+            )
+            self.buttons_sga.append(button)
 
         epp_buttons_origin = [700, 600]
+        button_width, button_height = 100, 140
+        x_offset = 105  # Distance between buttons along x-axis
 
-        crear_boton_imagen(self.root, epp_buttons_origin[0], epp_buttons_origin[1], "assets/epp/1.png", self.lista_epp, "assets/epp/1.png", 0,
-                           0, 100, 140)
-        crear_boton_imagen(self.root, epp_buttons_origin[0], epp_buttons_origin[1], "assets/epp/2.png", self.lista_epp, "assets/epp/2.png", 105,
-                           0, 100, 140)
-        crear_boton_imagen(self.root, epp_buttons_origin[0], epp_buttons_origin[1], "assets/epp/3.png", self.lista_epp, "assets/epp/3.png", 210,
-                           0, 100, 140)
+        for i in range(3):
+            x = i * x_offset  # Calculate x position
+            y = 0  # y is constant since all buttons are in the same row
+            img_path = f"assets/epp/{i + 1}.png"  # Generate image path dynamically
+
+            # Create and store the button
+            button = ToggleImageButton(
+                self.root,
+                epp_buttons_origin[0],
+                epp_buttons_origin[1],
+                img_path,
+                self.lista_epp,
+                img_path,
+                x, y,
+                button_width,
+                button_height,
+                i + 1
+            )
+            self.buttons_epp.append(button)
+
+    def update_form(self, datos):
+
+
+        """
+        Updates the form with data from a dictionary.
+        :param datos: A dictionary containing the product data.
+        """
+        self.ficha.set(int(datos.get("FICHA", "0").split('°')[-1]))
+        self.edicion.set(int(datos.get("EDICION", "0").split('°')[-1]))
+        self.nombre_producto.set(datos.get("NOMBRE", ""))
+        self.forma.set(datos.get("ESTADO", ""))
+        self.responsable.set(datos.get("RESPONSABLE", "").replace("REVISADO POR: ", ""))
+
+        # Set dates
+        self.fecha_revision.set_date(datos.get("REVISION", "").replace("REVISION: ", ""))
+        self.vigente.set_date(datos.get("VIGENTE", "").replace("VIGENTE: ", ""))
+
+        # Set text areas
+        self.text_riesgos.delete("1.0", "end")
+        self.text_riesgos.insert("1.0", datos.get("RIESGOS", ""))
+
+        self.text_manipulacion.delete("1.0", "end")
+        self.text_manipulacion.insert("1.0", datos.get("MANIPULACION", ""))
+
+        self.text_almacenamiento.delete("1.0", "end")
+        self.text_almacenamiento.insert("1.0", datos.get("ALMACENAMIENTO", ""))
+
+        self.text_eliminacion.delete("1.0", "end")
+        self.text_eliminacion.insert("1.0", datos.get("ELIMINACION", ""))
+
+        self.text_firstaid.delete("1.0", "end")
+        self.text_firstaid.insert("1.0", datos.get("FIRSTAID", ""))
+
+        self.text_derrame.delete("1.0", "end")
+        self.text_derrame.insert("1.0", datos.get("DERRAME", ""))
+
+        self.text_fuego.delete("1.0", "end")
+        self.text_fuego.insert("1.0", datos.get("FUEGO", ""))
+
+        for button in self.buttons_sga:
+            button.toggle_button(force=False)
+            for path in datos.get("SGA", ""):
+                if path.endswith(f"/{button.id}.png"):
+
+                    button.toggle_button(force=True)
+
+        for button in self.buttons_epp:
+            button.toggle_button(force=False)
+            for path in datos.get("EPP", ""):
+                if path.endswith(f"/{button.id}.png"):
+
+                    button.toggle_button(force=True)
+
+
+        FormIO.leer_datos(self)
