@@ -72,10 +72,10 @@ def deserialize(filename):
     try:
         with open(f"{filename}", "r") as json_file:
             data = json.load(json_file)
-            print(f"Loaded data from: {filename}.json")
+            print(f"Loaded data from: {filename}")
             return data
     except FileNotFoundError:
-        print(f"Error: File '{filename}.json' not found.")
+        print(f"Error: File '{filename}' not found.")
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
     except Exception as e:

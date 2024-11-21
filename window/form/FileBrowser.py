@@ -2,7 +2,7 @@ import os
 import tkinter as tk
 from tkinter import filedialog, messagebox, Scrollbar, Listbox
 
-
+from window.DatabaseIO import DatabaseIO
 from window.form import FormIO  # Assuming this is your FormIO import
 from window.form.FormIO import leer_datos, slugify
 
@@ -80,6 +80,7 @@ class FileBrowser:
                 self.file_list.insert(tk.END, entry)
 
             self.current_path = path
+            self.parent.std_folder = self.current_path
         except PermissionError:
             messagebox.showerror("Error", "Permission denied.")
         except FileNotFoundError:
@@ -137,8 +138,8 @@ class FileBrowser:
 
     def save_std(self):
         """Displays a confirmation dialog for overwriting the selected file."""
-        filename = leer_datos(self.parent)["NOMBRE"]
-        filename = slugify(filename)
+        product_name = leer_datos(self.parent)["NOMBRE"]
+        filename = slugify(product_name)
         if filename.startswith(" ") or filename == "":
             messagebox.showwarning("ERROR", "El nombre del producto está vacío o contiene carácteres inválidos.")
             return
@@ -155,5 +156,7 @@ class FileBrowser:
         else:
             FormIO.serialize(self.current_path, leer_datos(self.parent))
             messagebox.showinfo("Archivo guardado:", f"Salida: {self.current_path}")
+
+        DatabaseIO.add_product(product_name, filename + "-STD.json")
 
         self.refresh()

@@ -3,8 +3,10 @@ from tkinter import ttk, messagebox
 
 import tkcalendar
 
+from window.DatabaseIO import DatabaseIO
 from window.form import FormIO
 from window.form.FileBrowser import FileBrowser
+from window.form.bulk_update_window.BulkUpdateWindow import BulkUpdateWindow
 from window.form.export_window.ExportWindow import ExportWindow
 from window.GUI_Builders import *
 
@@ -26,6 +28,7 @@ class ProductoFormulario:
         self.root.title("Formulario de Producto Químico")
         self.root.geometry("1920x1080")
 
+        DatabaseIO.load_database()
         # Initialize variables
         self.init_variables()
 
@@ -33,6 +36,8 @@ class ProductoFormulario:
         self.crear_header()
         self.crear_secciones()
         self.browser = FileBrowser(self, x=1050, y=120, width=580, height=860)
+        self.std_folder = "No hay carpeta seleccionada."
+
     def init_variables(self):
         self.docx_output_path = "No hay carpeta seleccionada."
 
@@ -94,6 +99,13 @@ class ProductoFormulario:
 
     def crear_header(self):
         """Creates the header section with basic product information."""
+        self.info1_label = tk.Label(
+            self.root, wraplength=1200, justify="left", text="INFORMACIÓN DE USO EFECTIVO: \n -NUNCA cambiar el nombre de un archivo STD manualmente desde el explorador de windows. Cargar y modificar desde el programa."
+            "\n-NO se recomienda cambiarle el nombre a un producto ya creado, pero de hacerlo, elimine manualmente el archivo STD original para no dejar copias desactualizadas."
+            "\n-Los STD se exportarán a .DOCX con el nombre del producto ingresado. Si más de un STD posee el mismo nombre internamente, se guardará solo un archivo en total."
+            "\n-No ingrese datos redundantes o repetidos en diferentes campos, respetando el uso de cada uno de estos. Sea breve, descriptivo y eficiente con el límite de caracteres.")
+        self.info1_label.place(x=1000, y=5)
+
         crear_entry(self.root, 10, 10, "Forma / Estado:", self.forma, 55, 0, 0, 30, 0, 20)
         crear_entry(self.root, 195, 10, "Nombre del Producto:", self.nombre_producto, 64, 0, 0, 50, 0, 20)
         crear_entry(self.root, 10, 50, "Responsable de Revisión:", self.responsable, 55, 0, 0, 81, 0, 20)
@@ -104,8 +116,11 @@ class ProductoFormulario:
         self.vigente = crear_date_entry(self.root, 595, 50, "Vigente:", 0, 0, 0, 20)
 
         # Botones principales
-        crear_boton(self.root, "Abrir opciones de Exportación", lambda: ExportWindow(self) , 750, 45, 200)
+        crear_boton(self.root, "ID", lambda: self.ficha.set(DatabaseIO.get_available_id()), 680, 25, 25)
 
+        crear_boton(self.root, "Export Options", lambda: ExportWindow(self) , 800, 65, 150)
+
+        crear_boton(self.root, "Bulk Update", lambda: BulkUpdateWindow(self), 800, 25, 150)
     def crear_secciones(self):
         """Creates all sections of the form (Pictograms, EPP, Text fields)."""
         # Separador
