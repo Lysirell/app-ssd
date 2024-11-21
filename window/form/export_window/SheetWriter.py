@@ -102,7 +102,7 @@ def place_pictograms(doc, placeholder, image_paths,
             for cell in row.cells:
                 if placeholder in cell.text:
                     cell.text = ""  # Clear the placeholder text
-                    paragraph = cell.add_paragraph()
+                    paragraph = cell.paragraphs[0]
                     paragraph.alignment = align_map.get(alignment, WD_ALIGN_PARAGRAPH.LEFT)
                     for image_path in image_paths:
                         run = paragraph.add_run()
@@ -137,5 +137,5 @@ def fill_form(doc, datos):
     replace(doc, "{derrame}", datos["DERRAME"], size="Small", alignment="left", vertical_alignment="top")
     replace(doc, "{fuego}", datos["FUEGO"], size="Small", alignment="left", vertical_alignment="top")
 
-    place_pictograms(doc, "{sga}", datos["SGA"], width_cm=1.8)
-    place_pictograms(doc, "{epp}", datos["EPP"], width_cm=1.8)
+    place_pictograms(doc, "{sga}", datos["SGA"], width_cm=2)
+    place_pictograms(doc, "{epp}", datos["EPP"], width_cm=2)
